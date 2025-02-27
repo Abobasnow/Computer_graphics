@@ -1,0 +1,137 @@
+import math as m
+from turtle import color
+
+import numpy as np
+from PIL import Image, ImageOps
+
+size = 4000
+img_mat = np.zeros((size, size, 3), dtype = np.uint8)
+
+def draw_line_1(img_mat, x0, y0, x1, y1, color):
+    step = 0.125
+    for t in np.arange(0, 1, step):
+        x = round((1.0 - t) * x0 + t * x1)
+        y = round((1.0 - t) * y0 + t * y1)
+        img_mat[y, x] = color
+
+def x_loop_1(img_mat, x0, y0, x1, y1, color):
+
+    for x in range(x0, x1):
+        t = (x - x0) / (x1 - x0)
+        y = round((1.0 - t) * y0 + t * y1)
+        img_mat[y, x] = color
+
+def x_loop_2(img_mat, x0, y0, x1, y1, color):
+    if (x0 > x1):
+        x0, x1 = x1, x0
+        y0, y1 = y1, y0
+
+    for x in range(x0, x1):
+        t = (x - x0) / (x1 - x0)
+        y = round((1.0 - t) * y0 + t * y1)
+        img_mat[y, x] = color
+
+def x_loop_3(img_mat, x0, y0, x1, y1, color):
+    flag = False
+    if abs(x0-x1) < abs(y0-y1):
+        x0, y0 = y0, x0
+        x1, y1 = y1, x1
+        flag = True
+
+    if (x0 > x1):
+        x0, x1 = x1, x0
+        y0, y1 = y1, y0
+
+    for x in range(x0, x1):
+        t = (x - x0) / (x1 - x0)
+        y = round((1.0 - t) * y0 + t * y1)
+        if (flag):
+            img_mat[x, y] = color
+        else:
+            img_mat[y, x] = color
+
+def x_loop_4(img_mat, x0, y0, x1, y1, color):
+    flag = False
+    if abs(x0 - x1) < abs(y0 - y1):
+        x0, y0 = y0, x0
+        x1, y1 = y1, x1
+        flag = True
+    if (x0 > x1):
+        x0, x1 = x1, x0
+        y0, y1 = y1, y0
+    y = y0
+    dy = abs(y1-y0)/(x1-x0)
+    derror = 0.0
+    y_update = 1 if y1 > y0 else -1
+    for x in range(x0, x1):
+        if (flag):
+            img_mat[x, y] = color
+        else:
+            img_mat[y, x] = color
+        derror += dy
+        if (derror > 0.5):
+            derror -= 1.0
+            y += y_update
+
+def x_loop_5(image,x0,y0,x1,y1,color):
+    flag = False
+    if abs(x0 - x1) < abs(y0 - y1):
+        x0, y0 = y0, x0
+        x1, y1 = y1, x1
+        flag = True
+    if (x0 > x1):
+        x0, x1 = x1, x0
+        y0, y1 = y1, y0
+    y = y0
+    dy = 2.0 * abs(y1 - y0)
+    derror = 0.0
+    y_update = 1 if y1 > y0 else -1
+    for x in range(x0, x1):
+        if (flag):
+            img_mat[x, y] = color
+        else:
+            img_mat[y, x] = color
+        derror += dy
+        if (derror > (x1- x0)):
+            derror -= 2.0 * (x1-x0) * 1.0
+            y += y_update
+
+for i in range (13):
+    x0 = 100
+    y0 = 100
+    x1 = int(100 + 95* m.cos((i*2*m.pi)/13))
+    y1 = int(100 + 95 * m.sin((i * 2*m.pi) / 13))
+    x_loop_5(img_mat, x0, y0, x1, y1, (255, 255, 255))
+
+"""for i in range (600):
+    for j in range (800):
+        img_mat[i,j] = (i + j) % 128
+img_mat[0:600, 0:800, 0] = 255
+"""
+f = open("C:\\Users\\Admin\\Desktop\\калинка\\model_1.obj")
+
+vec = []
+lis = []
+for s in f:
+    split = s.split()
+    if(split[0] == "v"):
+        vec.append([float(x) for x in split[1:]])
+    if (split[0] == 'f'):
+        lis.append([int(x.split('/')[0]) for x in split[1:]])
+print(lis)
+for vertex in vec:
+    img_mat[int(10000*vertex[1])+1000, int(10000*vertex[0])+1000] = (0, 0, 255)
+for face in lis:
+    x0 = 10000*vec[face[0]-1][0]+1000
+    y0 = 10000*vec[face[0]-1][1]+1000
+    x1 = 10000*vec[face[1]-1][0]+1000
+    y1 = 10000*vec[face[1]-1][1]+1000
+    x2 = 10000*vec[face[2]-1][0]+1000
+    y2 = 10000*vec[face[2]-1][1]+1000
+    x_loop_5(img_mat, int(x0), int(y0), int(x1), int(y1), (0, 0, 255))
+    x_loop_5(img_mat, int(x1), int(y1), int(x2), int(y2), (0, 0, 255))
+    x_loop_5(img_mat, int(x2), int(y2), int(x0), int(y1), (0, 0, 255))
+
+img = Image.fromarray(img_mat, mode = 'RGB')
+img = ImageOps.flip(img)
+img.save('img.png')
